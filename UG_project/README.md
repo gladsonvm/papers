@@ -3,7 +3,7 @@
 ###This directory contains the project that was done as a part of our graduation during the year 2012
 
 ####contributors:
-1. [Gladson V Manuel](https://in.linkedin.com/gladsonvm)
+1. [Gladson V Manuel](https://in.linkedin.com/in/gladsonvm)
 2. [Allen Joseph](https://in.linkedin.com/in/allen-joseph-64876530)
 3. [Anvin Johnson](https://in.linkedin.com/in/anvin-johnson-76277370)
 
