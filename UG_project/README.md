@@ -1,6 +1,6 @@
 #UG Project
 
-###This directory contains the project that was done as a part of our graduation
+###This directory contains the project that was done as a part of our graduation during the year 2012
 
 ####contributors:
 1. Gladson V Manuel
