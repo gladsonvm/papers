@@ -15,3 +15,6 @@
 
 **project.pdf** --> Whole paper in pdf format.
 
+####Description
+
+This project was simulated on [NS2](https://en.wikipedia.org/wiki/Ns_%28simulator%29) and the outputs were observed as per the documents in this repository.
