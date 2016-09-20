@@ -1,0 +1,762 @@
+﻿# Copyright (c) 1997 Regents of the University of California.
+# All rights reserved.
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions
+# are met:
+# 1. Redistributions of source code must retain the above copyright
+#    notice, this list of conditions and the following disclaimer.
+# 2. Redistributions in binary form must reproduce the above copyright
+#    notice, this list of conditions and the following disclaimer in the
+#    documentation and/or other materials provided with the distribution.
+# 3. All advertising materials mentioning features or use of this software
+#    must display the following acknowledgement:
+#      This product includes software developed by the Computer Systems
+#      Engineering Group at Lawrence Berkeley Laboratory.
+# 4. Neither the name of the University nor of the Laboratory may be used
+#    to endorse or promote products derived from this software without
+#    specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS'' AND
+# ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+# ARE DISCLAIMED.  IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE
+# FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+# DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+# OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+# HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+# LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+# OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+# SUCH DAMAGE.
+#
+# wireless3.tcl
+# simulation of a wired-cum-wireless topology running with mobileIP
+# ======================================================================
+# Define options
+# ======================================================================
+
+set opt(chan)   Channel/WirelessChannel        ;# channel type
+set opt(prop)   Propagation/TwoRayGround       ;# radio-propagation model
+set opt(netif)  Phy/WirelessPhy                ;# network interface type
+set opt(mac)    Mac/802_11                     ;# MAC type
+set opt(ifq)    Queue/DropTail/PriQueue        ;# interface queue type
+set opt(ll)     LL                             ;# link layer type
+set opt(ant)    Antenna/OmniAntenna            ;# antenna model
+set opt(ifqlen)         50                     ;# max packet in ifq
+set opt(nn)             6                      ;# number of mobilenodes
+set opt(adhocRouting)   DSDV                   ;# routing protocol
+
+set opt(cp)     ""                             ;# cp file not used
+set opt(sc)     ""                             ;# node movement file. 
+
+set opt(x)      15                           ;# x coordinate of topology
+set opt(y)      15                            ;# y coordinate of topology
+set opt(seed)   0.0                            ;# random seed
+set opt(stop)   300                           ;# time to stop simulation
+
+set opt(ftp1-start)      0.0
+set opt(ftp2-start)      0.0
+
+set num_wired_nodes      7
+#set num_bs_nodes       2  ; this is not really used here.
+
+# ======================================================================
+
+# check for boundary parameters and random seed
+if { $opt(x) == 0 || $opt(y) == 0 } {
+	puts "No X-Y boundary values given for wireless topology\n"
+}
+if {$opt(seed) > 0} {
+	puts "Seeding Random number generator with $opt(seed)\n"
+	ns-random $opt(seed)
+}
+
+# create simulator instance
+set ns_   [new Simulator]
+
+$ns_ color 1 Orange
+$ns_ color 2 Blue
+$ns_ color 3 Black
+$ns_ color 4 Green
+$ns_ color 5 Yellow
+$ns_ color 6 RED
+
+# set up for hierarchical routing
+$ns_ node-config -addressType hierarchical
+
+AddrParams set domain_num_ 2           ;# number of domains
+lappend cluster_num 1 1             ;# number of clusters in each domain
+AddrParams set cluster_num_ $cluster_num
+lappend eilastlevel 7 7            ;# number of nodes in each cluster 
+AddrParams set nodes_num_ $eilastlevel ;# of each domain
+
+set tracefd  [open wireless3-out.tr w]
+set namtrace [open out.nam w]
+$ns_ trace-all $tracefd
+$ns_ namtrace-all-wireless $namtrace $opt(x) $opt(y)
+
+set tr0 [open simple0.data w]
+set tr1 [open simple1.data w]
+set tr2 [open simple2.data w]
+set tr3 [open simple3.data w]
+set tr4 [open simple4.data w]
+set tr5 [open simple5.data w]
+
+set f0 [open nrdc.thro w]
+set f1 [open bic.thro w]
+set f2 [open cubic.thro w]
+set f3 [open illinois.thro w]
+set f4 [open highspeed.thro w]
+set f5 [open scalar.thro w]
+
+# Create topography object
+set topo   [new Topography]
+
+# define topology
+$topo load_flatgrid $opt(x) $opt(y)
+
+# create God
+#   2 for HA and FA
+create-god [expr $opt(nn) + 2]
+
+#create wired nodes
+set temp {0.0.0 0.0.1 0.0.2 0.0.3 0.0.4 0.0.5 0.0.6 }           ;# hierarchical addresses 
+for {set i 0} {$i < $num_wired_nodes} {incr i} {
+    set W($i) [$ns_ node [lindex $temp $i]] 
+}
+
+# Configure for ForeignAgent and HomeAgent nodes
+$ns_ node-config -mobileIP ON \
+                 -adhocRouting $opt(adhocRouting) \
+                 -llType $opt(ll) \
+                 -macType $opt(mac) \
+                 -ifqType $opt(ifq) \
+                 -ifqLen $opt(ifqlen) \
+                 -antType $opt(ant) \
+                 -propType $opt(prop) \
+                 -phyType $opt(netif) \
+                 -channelType $opt(chan) \
+		 -topoInstance $topo \
+                 -wiredRouting ON \
+		 -agentTrace ON \
+                 -routerTrace OFF \
+                 -macTrace OFF 
+
+# Create HA and FA
+set HA [$ns_ node 1.0.0]
+#set FA [$ns_ node 2.0.0]
+$HA random-motion 0
+#$FA random-motion 0
+
+# Position (fixed) for base-station nodes (HA & FA).
+$HA set X_ 50.000000000000
+$HA set Y_ 50.000000000000
+$HA set Z_ 0.000000000000
+
+#$FA set X_ 650.000000000000
+#$FA set Y_ 600.000000000000
+#$FA set Z_ 0.000000000000
+
+# create a mobilenode that would be moving between HA and FA.
+# note address of MH indicates its in the same domain as HA.
+$ns_ node-config -wiredRouting OFF
+
+#Mobile node 0
+set MH0 [$ns_ node 1.0.1]
+set node_(0) $MH0
+set HAaddress0 [AddrParams addr2id [$HA node-addr]]
+[$MH0 set regagent_] set home_agent_ $HAaddress0
+
+# movement of the MH
+$MH0 set Z_ 0.000000000000
+$MH0 set Y_ 0.000000000000
+$MH0 set X_ 120.000000000000
+
+#Mobile node 1
+set MH1 [$ns_ node 1.0.2]
+set node_(1) $MH1
+set HAaddress1 [AddrParams addr2id [$HA node-addr]]
+[$MH1 set regagent_] set home_agent_ $HAaddress1
+
+# movement of the MH
+$MH1 set Z_ 0.000000000000
+$MH1 set Y_ 0.000000000000
+$MH1 set X_ 140.000000000000
+
+#Mobile node 2
+set MH2 [$ns_ node 1.0.3]
+set node_(2) $MH2
+set HAaddress2 [AddrParams addr2id [$HA node-addr]]
+[$MH2 set regagent_] set home_agent_ $HAaddress2
+
+# movement of the MH
+$MH2 set Z_ 0.000000000000
+$MH2 set Y_ 15.000000000000
+$MH2 set X_ 150.000000000000
+
+#Mobile node 3
+
+set MH3 [$ns_ node 1.0.4]
+set node_(3) $MH3
+set HAaddress3 [AddrParams addr2id [$HA node-addr]]
+[$MH3 set regagent_] set home_agent_ $HAaddress3
+
+
+# movement of the MH
+$MH3 set Z_ 0.000000000000
+$MH3 set Y_ 30.000000000000
+$MH3 set X_ 150.000000000000
+
+#Mobile node 4
+set MH4 [$ns_ node 1.0.5]
+set node_(4) $MH4
+set HAaddress4 [AddrParams addr2id [$HA node-addr]]
+[$MH4 set regagent_] set home_agent_ $HAaddress4
+
+# movement of the MH
+$MH4 set Z_ 0.000000000000
+$MH4 set Y_ 40.000000000000
+$MH4 set X_ 140.000000000000
+
+#Mobile node 5
+
+set MH5 [$ns_ node 1.0.6]
+set node_(5) $MH5
+set HAaddress5 [AddrParams addr2id [$HA node-addr]]
+[$MH5 set regagent_] set home_agent_ $HAaddress5
+
+# movement of the MH
+$MH5 set Z_ 0.000000000000
+$MH5 set Y_ 40.000000000000
+$MH5 set X_ 120.000000000000
+# MH starts to move towards FA
+#$ns_ at 100.000000000000 "$MH0 setdest 50.000000000000 50.000000000000 0.000000000000"
+# goes back to HA
+#$ns_ at 200.000000000000 "$MH0 setdest 2.000000000000 2.000000000000 20.000000000000"
+
+# create links between wired and BaseStation nodes
+$ns_ duplex-link $W(0) $W(6) 100Mb 10ms DropTail
+$ns_ duplex-link $W(1) $W(6) 100Mb 10ms DropTail
+$ns_ duplex-link $W(2) $W(6) 100Mb 10ms DropTail
+$ns_ duplex-link $W(3) $W(6) 100Mb 10ms DropTail
+$ns_ duplex-link $W(4) $W(6) 100Mb 10ms DropTail
+$ns_ duplex-link $W(5) $W(6) 100Mb 10ms DropTail
+
+$ns_ duplex-link $W(6) $HA 10Mb 100ms DropTail
+#$ns_ duplex-link $W(1) $FA 5Mb 2ms DropTail
+
+$ns_ queue-limit $W(6) $HA 10
+
+$ns_ duplex-link-op $W(0) $W(6) orient down
+$ns_ duplex-link-op $W(1) $W(6) orient right-down
+$ns_ duplex-link-op $W(2) $W(6) orient right
+$ns_ duplex-link-op $W(3) $W(6) orient right-up
+$ns_ duplex-link-op $W(4) $W(6) orient up
+$ns_ duplex-link-op $W(5) $W(6) orient left-up
+$ns_ duplex-link-op $W(6) $HA orient right
+#$ns_ duplex-link-op $W(1) $FA orient right-down
+
+$ns_ duplex-link-op $W(6) $HA queuePos 0.5
+
+# setup TCP0 connections between a wired node and the MobileHost
+
+
+set tcp0 [new Agent/TCP/Linux]
+$tcp0 set class_ 2
+$tcp0 set window_ 100000
+#$tcp0 set maxcwnd_ 1000
+$tcp0 set timestamps_ true
+$ns_ at 0 "$tcp0 select_ca NRDC_cong"
+set sink0 [new Agent/TCPSink/Sack1]
+$ns_ attach-agent $W(0) $tcp0
+$ns_ attach-agent $MH0 $sink0
+$ns_ connect $tcp0 $sink0
+set ftp0 [new Application/FTP]
+$ftp0 attach-agent $tcp0
+$ns_ at 50.0 "$ftp0 start"
+$tcp0 set fid_ 1
+
+# setup TCP1 connections between a wired node and the MobileHost
+
+
+set tcp1 [new Agent/TCP/Linux]
+$tcp1 set class_ 2
+$tcp1 set window_ 100000
+#$tcp1 set maxcwnd_ 1000
+$tcp1 set timestamps_ true
+$ns_ at 0 "$tcp1 select_ca bic"
+set sink1 [new Agent/TCPSink/Sack1]
+$ns_ attach-agent $W(1) $tcp1
+$ns_ attach-agent $MH1 $sink1
+$ns_ connect $tcp1 $sink1
+set ftp1 [new Application/FTP]
+$ftp1 attach-agent $tcp1
+$ns_ at 0.0 "$ftp1 start"
+$tcp1 set fid_ 2
+
+# setup TCP2 connections between a wired node and the MobileHost
+
+
+set tcp2 [new Agent/TCP/Linux]
+$tcp2 set class_ 2
+$tcp2 set window_ 100000
+#$tcp2 set maxcwnd_ 1000
+$tcp2 set timestamps_ true
+$ns_ at 0 "$tcp2 select_ca cubic"
+set sink2 [new Agent/TCPSink/Sack1]
+$ns_ attach-agent $W(2) $tcp2
+$ns_ attach-agent $MH2 $sink2
+$ns_ connect $tcp2 $sink2
+set ftp2 [new Application/FTP]
+$ftp2 attach-agent $tcp2
+$ns_ at $opt(ftp2-start) "$ftp2 start"
+$tcp2 set fid_ 3
+
+# setup TCP3 connections between a wired node and the MobileHost
+
+
+set tcp3 [new Agent/TCP/Linux]
+$tcp3 set class_ 2
+$tcp3 set window_ 100000
+#$tcp3 set maxcwnd_ 1000
+$tcp3 set timestamps_ true
+$ns_ at 0 "$tcp3 select_ca illinois"
+set sink3 [new Agent/TCPSink/Sack1]
+$ns_ attach-agent $W(3) $tcp3
+$ns_ attach-agent $MH3 $sink3
+$ns_ connect $tcp3 $sink3
+set ftp3 [new Application/FTP]
+$ftp3 attach-agent $tcp3
+$ns_ at 0.0 "$ftp3 start"
+$tcp3 set fid_ 4
+
+# setup TCP0 connections between a wired node and the MobileHost
+
+set tcp4 [new Agent/TCP/Linux]
+$tcp4 set class_ 2
+$tcp4 set window_ 100000
+#$tcp4 set maxcwnd_ 1000
+$tcp4 set timestamps_ true
+$ns_ at 0 "$tcp4 select_ca highspeed"
+set sink4 [new Agent/TCPSink/Sack1]
+$ns_ attach-agent $W(4) $tcp4
+$ns_ attach-agent $MH4 $sink4
+$ns_ connect $tcp4 $sink4
+set ftp4 [new Application/FTP]
+$ftp4 attach-agent $tcp4
+$ns_ at 0.0 "$ftp4 start"
+$tcp4 set fid_ 5
+
+# setup TCP0 connections between a wired node and the MobileHost
+
+set tcp5 [new Agent/TCP/Linux]
+$tcp5 set class_ 2
+$tcp5 set window_ 100000
+#$tcp5 set maxcwnd_ 1000
+$tcp5 set timestamps_ true
+$ns_ at 0 "$tcp5 select_ca scalable"
+set sink5 [new Agent/TCPSink/Sack1]
+$ns_ attach-agent $W(5) $tcp5
+$ns_ attach-agent $MH5 $sink5
+$ns_ connect $tcp5 $sink5
+set ftp5 [new Application/FTP]
+$ftp5 attach-agent $tcp5
+$ns_ at $opt(ftp1-start) "$ftp5 start"
+$tcp5 set fid_ 6
+
+# source connection-pattern and node-movement scripts
+if { $opt(cp) == "" } {
+	puts "*** NOTE: no connection pattern specified."
+        set opt(cp) "none"
+} else {
+	puts "Loading connection pattern..."
+	source $opt(cp)
+}
+if { $opt(sc) == "" } {
+	puts "*** NOTE: no scenario file specified."
+        set opt(sc) "none"
+} else {
+	puts "Loading scenario file..."
+	source $opt(sc)
+	puts "Load complete..."
+}
+
+# Define initial node position in nam
+
+for {set i 0} {$i < $opt(nn)} {incr i} {
+
+    # 20 defines the node size in nam, must adjust it according to your
+    # scenario
+    # The function must be called after mobility model is defined
+
+    $ns_ initial_node_pos $node_($i) 10
+} 
+    
+set last_ack0 0
+set last_ack1 0
+set last_ack2 0
+set last_ack3 0
+set last_ack4 0
+set last_ack5 0
+
+proc record {} {
+    global ns_ tcp0 tcp1 tcp2 tcp3 tcp4 tcp5 sink0 sink1 sink2 sink3 sink4 sink5 tr0 tr1 tr2 tr3 tr4 tr5 f0 f1 f2 f3 f4 f5
+    global last_ack0 last_ack1 last_ack2 last_ack3 last_ack4 last_ack5
+    set now [$ns_ now]
+    set time 0.5 
+
+    set cwin0 [$tcp0 set cwnd_]
+    set bytes0 [$sink0 set bytes_]
+    set nrexmitpack0 [$tcp0 set nrexmitpack_] 
+    
+    set cwin1 [$tcp1 set cwnd_]
+    set bytes1 [$sink1 set bytes_] 
+    set nrexmitpack1 [$tcp1 set nrexmitpack_] 
+    
+   set cwin2 [$tcp2 set cwnd_]
+    set bytes2 [$sink2 set bytes_] 
+    set nrexmitpack2 [$tcp2 set nrexmitpack_] 
+   
+    set cwin3 [$tcp3 set cwnd_]
+    set bytes3 [$sink3 set bytes_]
+    set nrexmitpack3 [$tcp3 set nrexmitpack_] 
+
+   set cwin4 [$tcp4 set cwnd_]
+    set bytes4 [$sink4 set bytes_]
+    set nrexmitpack4 [$tcp4 set nrexmitpack_] 
+  
+   set cwin5 [$tcp5 set cwnd_]
+    set bytes5 [$sink5 set bytes_]
+    set nrexmitpack5 [$tcp5 set nrexmitpack_] 	
+
+   set c0 [$tcp0 set ack_] 
+   set d0 [$tcp0 set packetSize_]  
+	 
+   set c1 [$tcp1 set ack_] 
+   set d1 [$tcp1 set packetSize_] 
+ 
+   set c2 [$tcp2 set ack_] 
+   set d2 [$tcp2 set packetSize_] 
+
+   set c3 [$tcp3 set ack_] 
+   set d3 [$tcp3 set packetSize_] 
+ 
+   set c4 [$tcp4 set ack_] 
+   set d4 [$tcp4 set packetSize_] 
+
+   set c5 [$tcp5 set ack_] 
+   set d5 [$tcp5 set packetSize_] 
+ 
+       
+    puts $tr0 "$now [expr $cwin0*1] [expr $bytes0] $nrexmitpack0"
+    puts $tr1 "$now [expr $cwin1*1] [expr $bytes1] $nrexmitpack1"
+    puts $tr2 "$now [expr $cwin2*1] [expr $bytes2] $nrexmitpack2"
+    puts $tr3 "$now [expr $cwin3*1] [expr $bytes3] $nrexmitpack3"
+    puts $tr4 "$now [expr $cwin4*1] [expr $bytes4] $nrexmitpack4"
+    puts $tr5 "$now [expr $cwin5*1] [expr $bytes5] $nrexmitpack5"
+    
+     if { $c0 >0} { 
+         set e0 [expr $c0 - $last_ack0] 
+         puts $f0 "$now [expr $e0*$d0*8/$time/1000000]" 
+         set last_ack0 $c0 
+        } else { 
+         puts $f0 "$now 0" 
+        } 
+         
+    if { $c1 >0} { 
+         set e1 [expr $c1 - $last_ack1] 
+         puts $f1 "$now [expr $e1*$d1*8/$time/1000000]" 
+         set last_ack1 $c1 
+        } else { 
+         puts $f1 "$now 0" 
+        } 
+
+	 if { $c2 >0} { 
+         set e2 [expr $c2 - $last_ack2] 
+         puts $f2 "$now [expr $e2*$d2*8/$time/1000000]" 
+         set last_ack2 $c2 
+        } else { 
+         puts $f2 "$now 0" 
+        } 
+         
+    if { $c3 >0} { 
+         set e3 [expr $c3 - $last_ack3] 
+         puts $f3 "$now [expr $e3*$d3*8/$time/1000000]" 
+         set last_ack3 $c3 
+        } else { 
+         puts $f3 "$now 0" 
+        } 
+
+
+	 if { $c4 >0} { 
+         set e4 [expr $c4 - $last_ack4] 
+         puts $f4 "$now [expr $e4*$d4*8/$time/1000000]" 
+         set last_ack4 $c4 
+        } else { 
+         puts $f4 "$now 0" 
+        } 
+         
+    if { $c5 >0} { 
+         set e5 [expr $c5 - $last_ack5] 
+         puts $f5 "$now [expr $e5*$d5*8/$time/1000000]" 
+         set last_ack5 $c5 
+        } else { 
+         puts $f5 "$now 0" 
+        } 
+       
+    $ns_ at [expr $now+$time] "record "   
+}
+
+$ns_ at 0.0 "record"
+
+# Tell all nodes when the siulation ends
+for {set i 0} {$i < $opt(nn) } {incr i} {
+    $ns_ at $opt(stop).0 "$node_($i) reset";
+}
+$ns_ at $opt(stop).0 "$HA reset";
+#$ns_ at $opt(stop).0 "$FA reset";
+
+$ns_ at $opt(stop).0002 "puts \"NS EXITING...\" ; $ns_ halt"
+$ns_ at $opt(stop).0001 "stop"
+
+proc stop {} {
+    
+	global ns_  tr0 tr1 tr2 tr3 tr4 tr5 f0 f1 f2 f3 f4 f5 tracefd namtrace
+	
+	set flow  {{
+		if ( $8 == fw )
+			print $0;
+	}}
+
+	set ewma  {{
+		a = 0.9;
+		if ( y == 0 )
+			y = $2;
+		x = $2;
+		y = a*y + (1-a)*x;
+        printf("%f  %f\n", $1, y);
+    }}
+	set bw  {{
+		if ( old1 == 0 )
+			old1 = $1;
+        else if ( (dif = $1 - old1) == 0 )
+			old1 = $1;
+        else if ( dif > 0 )  {
+            printf("%f  %f\n", $1, (8*$2/1024)/dif);
+            old1 = $1;
+        }
+    }}
+    set meanbw  {{
+		bytes += $2;
+		if ( start == 0 )
+			start = $1;
+		elapsed = $1 - start;		
+        if ( elapsed > 0 )
+            printf("%f  %f\n", $1, (8*bytes/1024)/elapsed);
+    }}
+			
+	set losses  {{
+		if ( $1 == "+" )
+			sent += 1;
+		else if ( $1 == "d" )
+            lost += 1;
+		else if ( $1 == "r" )
+            received += 1;
+	#printf("%05d   %09d\n",$2, sent);
+	printf("%05d   %09f\n",sent, 100*lost/sent);
+	#printf("%05d   %09d\n",$2, received);
+    } END { 
+		if ( sent > 0 )  { 
+			#printf("   Packets sent: %5d\n", sent);
+			#printf("Packets dropped: %5d\n", lost);
+			#printf("   Total losses: %12.6f\n", 100*lost/sent);
+		} 
+	}}
+
+	set ingress  {{
+        printf("%05d   %09d  +\n", $1, 1000000*$2);
+    }}
+    set egress  {{
+        printf("%05d   %09d  r\n", $1, 1000000*$2);
+    }}
+	
+
+	set latency  {{
+		if ( $3 == "+" )  {
+			if ( pkt[1] == 0 )  {
+				ti[1] = $2;
+				pkt[1] = $1+1;
+			}
+			else if ( pkt[2] == 0 )  {
+				ti[2] = $2;
+				pkt[2] = $1+1;
+			}
+			else if ( pkt[3] == 0 )  {
+				ti[3] = $2;
+				pkt[3] = $1+1;
+			}
+			else if ( pkt[4] == 0 )  {
+				ti[4] = $2;
+				pkt[4] = $1+1;
+			}
+			else  {
+				ti[1] = ti[2];
+				pkt[1] = pkt[2];
+				ti[2] = ti[3];
+				pkt[2] = pkt[3];
+				ti[3] = ti[4];
+				pkt[3] = pkt[4];
+				ti[4] = $2;
+				pkt[4] = $1+1;
+			}
+		}
+		else  {		# $3 is 'r'
+			rpkt = $1+1;
+			maxlat = 15000;
+			if ( pkt[4] == rpkt )  {
+				if ( (lat = ($2-ti[4])/1000) > maxlat )
+					lat = maxlat;
+            	printf("%d  %f  %f\n", pkt[4], lat, $2/1000000);
+			}
+			if ( pkt[3] == rpkt )  {
+				if ( (lat = ($2-ti[3])/1000) > maxlat )
+					lat = maxlat;
+            	printf("%d  %f  %f\n", pkt[3], lat, $2/1000000);
+			}
+			if ( pkt[2] == rpkt )  {
+				if ( (lat = ($2-ti[2])/1000) > maxlat )
+					lat = maxlat;
+            	printf("%d  %f  %f\n", pkt[2], lat, $2/1000000);
+			}
+			if ( pkt[1] == rpkt )  {
+				if ( (lat = ($2-ti[1])/1000) > maxlat )
+					lat = maxlat;
+            	printf("%d  %f  %f\n", pkt[1], lat, $2/1000000);
+			}
+			ti[1] = 0; ti[2] = 0; ti[3] = 0; ti[4] = 0;
+			pkt[1] = 0; pkt[2] = 0; pkt[3] = 0; pkt[4] = 0;
+		}
+    }}
+    set jitter  {{
+		if ( pkt == 0 )  {
+			ti = $2;
+			pkt = $1;
+		}
+		else if ( $1 == (pkt+1) )  {
+            printf("%d  %f  %f\n", $1, $2-ti, $3);
+			ti = $2;
+			pkt = $1;
+		}
+		else if ( $1 > (pkt+1) )  {
+			ti = $2;
+			pkt = $1;
+		}
+    }}
+
+        $ns_ flush-trace
+        close $namtrace
+	close $tracefd
+        #Close the NAM trace file
+        close $tr0
+	close $tr1
+	close $tr2
+	close $tr3
+	close $tr4
+	close $tr5
+	close $f0
+	close $f1
+	close $f2
+	close $f3
+	close $f4
+	close $f5
+	
+        #exec awk { { print $1, $2 } } simple3.data > temp.cwndcut1
+        #exec awk { { print $1, $3 } } simple3.data > temp.cwndcut2
+
+	exec awk { { print $1, $2 } } simple1.data > bic.cwnd
+        exec awk { { print $1, $3 } } simple1.data > bic.bytes
+	exec awk { { print $1, $4 } } simple1.data > bic.nrexmitpack1
+
+	exec awk { { print $1, $2 } } simple2.data > cubic.cwnd
+        exec awk { { print $1, $3 } } simple2.data > cubic.bytes
+	exec awk { { print $1, $4 } } simple2.data > cubic.nrexmitpack2
+
+        exec awk { { print $1, $2 } } simple3.data > htcp.cwnd
+        exec awk { { print $1, $3 } } simple3.data > htcp.bytes
+	exec awk { { print $1, $4 } } simple3.data > htcp.nrexmitpack3
+
+        exec awk { { print $1, $2 } } simple4.data > highspeed.cwnd
+        exec awk { { print $1, $3 } } simple4.data > highspeed.bytes
+	exec awk { { print $1, $4 } } simple4.data > highspeed.nrexmitpack4
+
+        exec awk { { print $1, $2 } } simple5.data > scalable.cwnd
+        exec awk { { print $1, $3 } } simple5.data > scalable.bytes
+	exec awk { { print $1, $4 } } simple5.data > scalable.nrexmitpack5
+
+        exec awk { { print $1, $2 } } simple0.data > viprio.cwnd
+        exec awk { { print $1, $3 } } simple0.data > viprio.bytes
+	exec awk { { print $1, $4 } } simple0.data > viprio.nrexmitpack0      
+
+
+        #exec awk { { print $1, $4 } } simple.data > temp.bwe
+
+exec xgraph  bic.cwnd cubic.cwnd htcp.cwnd highspeed.cwnd scalable.cwnd viprio.cwnd -m -x Simulation_time(ms) -y congestion_window(packets) -bg white -lf helvetica-14 -zg black -bb -tk -lw 2 -geometry 800x400 &
+	exec xgraph  bic.bytes cubic.bytes htcp.bytes highspeed.bytes scalable.bytes viprio.bytes -m -x Simulation_time(ms) -y received_bytes -bg white -lf helvetica-14 -zg black -bb -tk -lw 4 -geometry 800x400 &
+        #exec xgraph  bic.nrexmitpack1 cubic.nrexmitpack2 htcp.nrexmitpack3 highspeed.nrexmitpack4 scalable.nrexmitpack5 viprio.nrexmitpack0 -m -x time -y nrexmitpack -geometry 800x400 &
+	
+	exec xgraph bic.thro cubic.thro htcp.thro highspeed.thro scalar.thro viprio.thro -m -x Simulation_time(ms) -y Throughput(Mb) -bg white -lf helvetica-14 -zg black -bb -tk -geometry 1280x1024 & 
+	
+        #Execute NAM on the trace file
+	exec nam out.nam &
+	exec cat wireless3-out.tr | awk -v fw=1 $flow | grep "0 6 tcp" >queue0.tcp
+   	exec cat queue0.tcp | awk $losses  >NRDC.loss
+	
+	exec cat wireless3-out.tr | awk -v fw=2 $flow | grep "1 6 tcp" >queue1.tcp
+   	exec cat queue1.tcp | awk $losses  >bic.loss
+	exec cat wireless3-out.tr | awk -v fw=3 $flow | grep "2 6 tcp" >queue2.tcp
+   	exec cat queue2.tcp | awk $losses  >cubic.loss
+	exec cat wireless3-out.tr | awk -v fw=4 $flow | grep "3 6 tcp" >queue3.tcp
+   	exec cat queue3.tcp | awk $losses  >illinois.loss
+	exec cat wireless3-out.tr | awk -v fw=5 $flow | grep "4 6 tcp" >queue4.tcp
+   	exec cat queue4.tcp | awk $losses  >highspeed.loss
+	exec cat wireless3-out.tr | awk -v fw=6 $flow | grep "5 6 tcp" >queue5.tcp
+   	exec cat queue5.tcp | awk $losses  >scalar.loss
+	
+	exec xgraph viprio.loss cubic.loss scalar.loss htcp.loss bic.loss highspeed.loss -P -x packets_sent -y Packets_loss(%) -bg white -lf helvetica-14 -zg black -bb -tk -lw 4 -geometry 800x400 & 
+	 #exec xgraph  bic.thro10 cubic.thro10 htcp.thro10 highspeed.thro10 scalable.thro10 viprio.thro10 -m -x Link_Speed(Mb) -y Throughput_Ratio(%) -bg white -lf helvetica-14 -zg black -bb -tk -lw 3 -geometry 800x400 &
+
+#exec xgraph  bic.thro100 cubic.thro100 htcp.thro100 highspeed.thro100 scalable.thro100 viprio.thro100 -m -x Link_Speed(Mb) -y Throughput_Ratio(%)  -bg white -lf helvetica-14 -zg black -bb -tk -lw 3 -geometry 800x400 &
+
+	exec cat wireless3-out.tr | awk -v fw=1 $flow | grep "0 6 tcp" | grep ^r | awk $ewma >bw1.tcp
+	exec cat wireless3-out.tr | awk -v fw=1 $flow | grep "0 6 tcp" | grep ^r | awk $bw >bw2.tcp
+	#exec xgraph bw1.tcp -m -x time -y thro -geometry 800x400 & 
+	# bandwidth - graph
+	#exec echo "tcp: 1 flow" >title.tmp
+	#exec echo "time elapsed in seconds" >xlabel.tmp
+	#exec echo "throughput in kbps" >ylabel.tmp
+	#exec echo "./graphs/bw-$file.png" >output.tmp
+	#exec echo "plot \"bw1.tcp\" using 1:2 title \"tcp\" with lines" >plot.tmp
+    	#exec gnuplot gnuplot.plot
+
+	
+	exec cat wireless3-out.tr | awk -v fw=1 $flow | grep "0 6 tcp" | grep ^+ | awk $ingress >ingress1.tcp
+	exec cat wireless3-out.tr | awk -v fw=1 $flow | grep "0 6 tcp" | grep ^r | awk $egress >egress1.tcp
+	exec cat ingress1.tcp egress1.tcp | awk $latency >latency1.tcp
+	
+	# jitter - tcp
+	exec cat latency1.tcp | awk $jitter >jitter1.tcp
+	#exec xgraph jitter1.tcp	-m -x packets -y loss(%) -geometry 800x400 & 
+	
+        exit 0
+}
+
+# some useful headers for tracefile
+#puts $tracefd "M 0.0 nn $opt(nn) x $opt(x) y $opt(y) rp \
+#	$opt(adhocRouting)"
+#puts $tracefd "M 0.0 sc $opt(sc) cp $opt(cp) seed $opt(seed)"
+#puts $tracefd "M 0.0 prop $opt(prop) ant $opt(ant)"
+
+puts "Starting Simulation..."
+$ns_ run
+
+

@@ -1,0 +1,83 @@
+﻿/* This is a very naive Reno implementation, shown as an example on how to develop a new congestion control algorithm with TCP-Linux.
+ *
+ * See a mini-tutorial about TCP-Linux at: http://netlab.caltech.edu/projects/ns2tcplinux/
+ *
+ */
+#define NS_PROTOCOL "tcp_NRDC_cong.c"
+
+#include "ns-linux-c.h"
+#include "ns-linux-util.h"
+
+static int alpha =2 ;
+static int beta =0.25;
+int count=10;
+module_param(alpha, int, 0644);
+MODULE_PARM_DESC(alpha, "AI increment size of window (in unit of pkt/round trip time)");
+module_param(beta, int, 0644);
+MODULE_PARM_DESC(beta, "MD decrement portion of window: every loss the window is reduced by a proportion of 1/beta");
+
+/* opencwnd */
+void tcp_NRDC_reno_cong_avoid(struct tcp_sock *tp, u32 ack, u32 rtt, u32 in_flight, int flag) 
+{
+
+	
+if (tp->snd_cwnd < tp->snd_ssthresh) {
+		tp->snd_cwnd++;
+	} else {
+		if (tp->snd_cwnd_cnt >= tp->snd_cwnd) {
+				// cwnd_ += increase_num_ / (cwnd_*pow(cwnd_,k_parameter_));     
+				//cwnd_ *=  (cwnd_*pow(2.7,4)); 
+			//if(count>2*tp->snd_cwnd)
+			//{
+			tp->snd_cwnd += (tp->snd_cwnd*(count-(2*tp->snd_cwnd)));
+			//tp->snd_cwnd += tp->snd_cwnd*(pow(tp->snd_cwnd,alpha));
+			//}else
+			//{
+			//tp->snd_cwnd += 4;
+			//}
+			
+			tp->snd_cwnd_cnt = 0;
+			if (tp->snd_cwnd > tp->snd_cwnd_clamp)
+				tp->snd_cwnd = tp->snd_cwnd_clamp;
+			count++;
+		} else {
+			
+			tp->snd_cwnd_cnt++;
+			
+		}
+	}
+}
+
+/* ssthreshold should be half of the congestion window after a loss */
+u32 tcp_NRDC_reno_ssthresh(struct tcp_sock *tp)
+{
+	//  temp = (int)(window() - (1.0-decrease_num_)*pow(window(),l_parameter_));
+         //int reduction=tp->snd_cwnd/(pow(2.7,beta));
+	//int reduction=tp->snd_cwnd/(pow(tp->snd_cwnd,beta));
+	//int reduction=tp->snd_cwnd/2;
+	
+	//return max(tp->snd_cwnd-reduction, 2U);
+	return max(tp->snd_cwnd/2, 2U);
+}
+
+
+/* congestion window should be equal to the slow start threshold (after slow start threshold set to half of cwnd before loss). */
+u32 tcp_NRDC_reno_min_cwnd(const struct tcp_sock *tp)
+{
+        return tp->snd_ssthresh;
+}
+
+static struct tcp_congestion_ops tcp_NRDC_reno = {
+        .name           = "NRDC_cong",
+        .ssthresh       = tcp_NRDC_reno_ssthresh,
+        .cong_avoid     = tcp_NRDC_reno_cong_avoid,
+        .min_cwnd       = tcp_NRDC_reno_min_cwnd
+};
+
+int tcp_NRDC_reno_register(void)
+{
+	tcp_register_congestion_control(&tcp_NRDC_reno);
+	return 0;
+}
+module_init(tcp_NRDC_reno_register);
+

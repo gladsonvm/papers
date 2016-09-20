@@ -1,0 +1,360 @@
+﻿#------------------------------------------------------- 
+# This ns script has been created by the nam editor.
+# If you edit it manually, the nam editor might not
+# be able to open it properly in the future.
+#
+# EDITING BY HAND IS AT YOUR OWN RISK!
+#------------------------------------------------------- 
+# Create a new simulator object.
+set ns [new Simulator]
+# Create a nam trace datafile.
+set namfile [open ppp.nam w]
+set trfd  [open out.tr w]
+$ns trace-all $trfd
+$ns namtrace-all $namfile
+set f0 [open nrdc.thro w]
+set f1 [open bic.thro w]
+# Create wired nodes.
+set node(8) [$ns node]
+## node(8) at 601.859375,575.906250
+$node(8) set X_ 601.859375
+$node(8) set Y_ 575.906250
+$node(8) set Z_ 0.0
+$node(8) color "black"
+
+set node(7) [$ns node]
+## node(7) at 577.453125,575.562500
+$node(7) set X_ 577.453125
+$node(7) set Y_ 575.562500
+$node(7) set Z_ 0.0
+$node(7) color "black"
+
+set node(6) [$ns node]
+## node(6) at 562.671875,555.281250
+$node(6) set X_ 562.671875
+$node(6) set Y_ 555.281250
+$node(6) set Z_ 0.0
+$node(6) color "black"
+
+set node(5) [$ns node]
+## node(5) at 571.953125,594.812500
+$node(5) set X_ 571.953125
+$node(5) set Y_ 594.812500
+$node(5) set Z_ 0.0
+$node(5) color "black"
+
+set node(4) [$ns node]
+## node(4) at 537.578125,578.656250
+$node(4) set X_ 537.578125
+$node(4) set Y_ 578.656250
+$node(4) set Z_ 0.0
+$node(4) color "black"
+
+set node(3) [$ns node]
+## node(3) at 512.484375,563.187500
+$node(3) set X_ 512.484375
+$node(3) set Y_ 563.187500
+$node(3) set Z_ 0.0
+$node(3) color "black"
+
+set node(2) [$ns node]
+## node(2) at 530.015625,600.656250
+$node(2) set X_ 530.015625
+$node(2) set Y_ 600.656250
+$node(2) set Z_ 0.0
+$node(2) color "black"
+
+set node(1) [$ns node]
+## node(1) at 488.078094,588.281250
+$node(1) set X_ 488.078094
+$node(1) set Y_ 588.281250
+$node(1) set Z_ 0.0
+$node(1) color "black"
+
+
+# Create links between nodes.
+$ns simplex-link $node(8) $node(5) 100.000000Mb 20.000000ms DropTail
+$ns simplex-link-op $node(8) $node(5) queuePos 0.5
+$ns simplex-link-op $node(8) $node(5) color black
+$ns simplex-link-op $node(8) $node(5) orient 147.7deg
+# Set Queue Properties for link 8->5
+[[$ns link $node(8) $node(5)] queue] set limit_ 20
+
+$ns simplex-link $node(8) $node(6) 100.000000Mb 20.000000ms DropTail
+$ns simplex-link-op $node(8) $node(6) queuePos 0.5
+$ns simplex-link-op $node(8) $node(6) color black
+$ns simplex-link-op $node(8) $node(6) orient 207.8deg
+# Set Queue Properties for link 8->6
+[[$ns link $node(8) $node(6)] queue] set limit_ 20
+
+$ns simplex-link $node(7) $node(4) 100.000000Mb 20.000000ms DropTail
+$ns simplex-link-op $node(7) $node(4) queuePos 0.5
+$ns simplex-link-op $node(7) $node(4) color black
+$ns simplex-link-op $node(7) $node(4) orient 175.6deg
+# Set Queue Properties for link 7->4
+[[$ns link $node(7) $node(4)] queue] set limit_ 20
+
+$ns simplex-link $node(7) $node(5) 100.000000Mb 20.000000ms DropTail
+$ns simplex-link-op $node(7) $node(5) queuePos 0.5
+$ns simplex-link-op $node(7) $node(5) color black
+$ns simplex-link-op $node(7) $node(5) orient 105.9deg
+# Set Queue Properties for link 7->5
+[[$ns link $node(7) $node(5)] queue] set limit_ 20
+
+$ns simplex-link $node(6) $node(3) 100.000000Mb 20.000000ms DropTail
+$ns simplex-link-op $node(6) $node(3) queuePos 0.5
+$ns simplex-link-op $node(6) $node(3) color black
+$ns simplex-link-op $node(6) $node(3) orient 171.0deg
+# Set Queue Properties for link 6->3
+[[$ns link $node(6) $node(3)] queue] set limit_ 20
+
+$ns simplex-link $node(6) $node(8) 100.000000Mb 20.000000ms DropTail
+$ns simplex-link-op $node(6) $node(8) queuePos 0.5
+$ns simplex-link-op $node(6) $node(8) color black
+$ns simplex-link-op $node(6) $node(8) orient 27.8deg
+# Set Queue Properties for link 6->8
+[[$ns link $node(6) $node(8)] queue] set limit_ 20
+
+$ns simplex-link $node(6) $node(4) 100.000000Mb 20.000000ms DropTail
+$ns simplex-link-op $node(6) $node(4) queuePos 0.5
+$ns simplex-link-op $node(6) $node(4) color black
+$ns simplex-link-op $node(6) $node(4) orient 137.0deg
+# Set Queue Properties for link 6->4
+[[$ns link $node(6) $node(4)] queue] set limit_ 20
+
+$ns simplex-link $node(5) $node(8) 100.000000Mb 20.000000ms DropTail
+$ns simplex-link-op $node(5) $node(8) queuePos 0.5
+$ns simplex-link-op $node(5) $node(8) color black
+$ns simplex-link-op $node(5) $node(8) orient 327.7deg
+# Set Queue Properties for link 5->8
+[[$ns link $node(5) $node(8)] queue] set limit_ 20
+
+$ns simplex-link $node(5) $node(7) 100.000000Mb 20.000000ms DropTail
+$ns simplex-link-op $node(5) $node(7) queuePos 0.5
+$ns simplex-link-op $node(5) $node(7) color black
+$ns simplex-link-op $node(5) $node(7) orient 285.9deg
+# Set Queue Properties for link 5->7
+[[$ns link $node(5) $node(7)] queue] set limit_ 20
+
+$ns simplex-link $node(5) $node(4) 100.000000Mb 20.000000ms DropTail
+$ns simplex-link-op $node(5) $node(4) queuePos 0.5
+$ns simplex-link-op $node(5) $node(4) color black
+$ns simplex-link-op $node(5) $node(4) orient 205.2deg
+# Set Queue Properties for link 5->4
+[[$ns link $node(5) $node(4)] queue] set limit_ 20
+
+$ns simplex-link $node(5) $node(2) 100.000000Mb 20.000000ms DropTail
+$ns simplex-link-op $node(5) $node(2) queuePos 0.5
+$ns simplex-link-op $node(5) $node(2) color black
+$ns simplex-link-op $node(5) $node(2) orient 172.1deg
+# Set Queue Properties for link 5->2
+[[$ns link $node(5) $node(2)] queue] set limit_ 20
+
+$ns simplex-link $node(4) $node(1) 100.000000Mb 20.000000ms DropTail
+$ns simplex-link-op $node(4) $node(1) queuePos 0.5
+$ns simplex-link-op $node(4) $node(1) color black
+$ns simplex-link-op $node(4) $node(1) orient 169.0deg
+# Set Queue Properties for link 4->1
+[[$ns link $node(4) $node(1)] queue] set limit_ 20
+
+$ns simplex-link $node(4) $node(6) 100.000000Mb 20.000000ms DropTail
+$ns simplex-link-op $node(4) $node(6) queuePos 0.5
+$ns simplex-link-op $node(4) $node(6) color black
+$ns simplex-link-op $node(4) $node(6) orient 317.0deg
+# Set Queue Properties for link 4->6
+[[$ns link $node(4) $node(6)] queue] set limit_ 20
+
+$ns simplex-link $node(4) $node(7) 100.000000Mb 20.000000ms DropTail
+$ns simplex-link-op $node(4) $node(7) queuePos 0.5
+$ns simplex-link-op $node(4) $node(7) color black
+$ns simplex-link-op $node(4) $node(7) orient 355.6deg
+# Set Queue Properties for link 4->7
+[[$ns link $node(4) $node(7)] queue] set limit_ 20
+
+$ns simplex-link $node(4) $node(5) 100.000000Mb 20.000000ms DropTail
+$ns simplex-link-op $node(4) $node(5) queuePos 0.5
+$ns simplex-link-op $node(4) $node(5) color black
+$ns simplex-link-op $node(4) $node(5) orient 25.2deg
+# Set Queue Properties for link 4->5
+[[$ns link $node(4) $node(5)] queue] set limit_ 20
+
+$ns simplex-link $node(4) $node(2) 100.000000Mb 20.000000ms DropTail
+$ns simplex-link-op $node(4) $node(2) queuePos 0.5
+$ns simplex-link-op $node(4) $node(2) color black
+$ns simplex-link-op $node(4) $node(2) orient 109.0deg
+# Set Queue Properties for link 4->2
+[[$ns link $node(4) $node(2)] queue] set limit_ 20
+
+$ns simplex-link $node(3) $node(6) 100.000000Mb 20.000000ms DropTail
+$ns simplex-link-op $node(3) $node(6) queuePos 0.5
+$ns simplex-link-op $node(3) $node(6) color black
+$ns simplex-link-op $node(3) $node(6) orient 351.0deg
+# Set Queue Properties for link 3->6
+[[$ns link $node(3) $node(6)] queue] set limit_ 20
+
+$ns simplex-link $node(3) $node(1) 100.000000Mb 20.000000ms DropTail
+$ns simplex-link-op $node(3) $node(1) queuePos 0.5
+$ns simplex-link-op $node(3) $node(1) color black
+$ns simplex-link-op $node(3) $node(1) orient 134.2deg
+# Set Queue Properties for link 3->1
+[[$ns link $node(3) $node(1)] queue] set limit_ 20
+
+$ns simplex-link $node(2) $node(5) 100.000000Mb 20.000000ms DropTail
+$ns simplex-link-op $node(2) $node(5) queuePos 0.5
+$ns simplex-link-op $node(2) $node(5) color black
+$ns simplex-link-op $node(2) $node(5) orient 352.1deg
+# Set Queue Properties for link 2->5
+[[$ns link $node(2) $node(5)] queue] set limit_ 20
+
+$ns simplex-link $node(2) $node(4) 100.000000Mb 20.000000ms DropTail
+$ns simplex-link-op $node(2) $node(4) queuePos 0.5
+$ns simplex-link-op $node(2) $node(4) color black
+$ns simplex-link-op $node(2) $node(4) orient 289.0deg
+# Set Queue Properties for link 2->4
+[[$ns link $node(2) $node(4)] queue] set limit_ 20
+
+$ns simplex-link $node(2) $node(1) 100.000000Mb 20.000000ms DropTail
+$ns simplex-link-op $node(2) $node(1) queuePos 0.5
+$ns simplex-link-op $node(2) $node(1) color black
+$ns simplex-link-op $node(2) $node(1) orient 196.4deg
+# Set Queue Properties for link 2->1
+[[$ns link $node(2) $node(1)] queue] set limit_ 20
+
+$ns simplex-link $node(1) $node(4) 100.000000Mb 20.000000ms DropTail
+$ns simplex-link-op $node(1) $node(4) queuePos 0.5
+$ns simplex-link-op $node(1) $node(4) color black
+$ns simplex-link-op $node(1) $node(4) orient 349.0deg
+# Set Queue Properties for link 1->4
+[[$ns link $node(1) $node(4)] queue] set limit_ 20
+
+$ns simplex-link $node(1) $node(3) 100.000000Mb 20.000000ms DropTail
+$ns simplex-link-op $node(1) $node(3) queuePos 0.5
+$ns simplex-link-op $node(1) $node(3) color black
+$ns simplex-link-op $node(1) $node(3) orient 314.2deg
+# Set Queue Properties for link 1->3
+[[$ns link $node(1) $node(3)] queue] set limit_ 20
+
+$ns simplex-link $node(1) $node(2) 100.000000Mb 20.000000ms DropTail
+$ns simplex-link-op $node(1) $node(2) queuePos 0.5
+$ns simplex-link-op $node(1) $node(2) color black
+$ns simplex-link-op $node(1) $node(2) orient 16.4deg
+# Set Queue Properties for link 1->2
+[[$ns link $node(1) $node(2)] queue] set limit_ 20
+
+# Add Link Loss Models
+
+# Create agents.
+set sink0 [new Agent/TCPSink/Sack1]
+$ns attach-agent $node(8) $sink0
+$sink0 set packetSize_ 210
+set tcp0 [new Agent/TCP/Linux]
+$ns attach-agent $node(1) $tcp0
+$tcp0 set timestamps_ true
+$ns at 0 "$tcp0 select_ca viji_cong"
+
+$ns color 1 "Red"
+$tcp0 set fid_ 1
+$tcp0 set packetSize_ 1040
+$tcp0 set window_ 1000
+$tcp0 set windowInit_ 1
+$tcp0 set maxcwnd_ 0
+
+# Create traffic sources and add them to the agent.
+set traffic_source(1) [new Application/FTP]
+$traffic_source(1) attach-agent $tcp0
+$traffic_source(1) set maxpkts_ 256
+
+# Connect agents.
+$ns connect $tcp0 $sink0
+
+# Create agents.
+set sink1 [new Agent/TCPSink/Sack1]
+$ns attach-agent $node(8) $sink1
+$sink0 set packetSize_ 210
+set tcp1 [new Agent/TCP/Linux]
+$ns attach-agent $node(1) $tcp1
+$tcp1 set timestamps_ true
+$ns at 0 "$tcp0 select_ca bic"
+
+
+
+$ns color 1 "Green"
+$tcp1 set fid_ 2
+$tcp1 set packetSize_ 1040
+$tcp1 set window_ 1000
+$tcp1 set windowInit_ 1
+$tcp1 set maxcwnd_ 0
+
+# Create traffic sources and add them to the agent.
+set traffic_source(2) [new Application/FTP]
+$traffic_source(2) attach-agent $tcp1
+$traffic_source(2) set maxpkts_ 256
+
+# Connect agents.
+$ns connect $tcp1 $sink1
+
+$ns rtproto DV
+
+# Traffic Source actions.
+$ns at 0.000000 "$traffic_source(1) start"
+$ns at 60.000000 "$traffic_source(1) stop"
+# Traffic Source actions.
+$ns at 0.000000 "$traffic_source(2) start"
+$ns at 60.000000 "$traffic_source(2) stop"
+set last_ack0 0
+set last_ack1 0
+proc record {} {
+    global ns tcp0 tcp1 sink1 sink0 f0 f1 
+    global last_ack0 last_ack1 
+    set now [$ns now]
+    set time 0.5 
+
+   set c0 [$tcp0 set ack_] 
+   set d0 [$tcp0 set packetSize_]  
+
+  if { $c0 >0} { 
+         set e0 [expr $c0 - $last_ack0] 
+         puts $f0 "$now [expr $e0*$d0*8/$time/1000000]" 
+         set last_ack0 $c0 
+        } else { 
+         puts $f0 "$now 0" 
+        } 
+         
+set c1 [$tcp1 set ack_] 
+   set d1 [$tcp1 set packetSize_]  
+
+  if { $c1 >0} { 
+         set e1 [expr $c1 - $last_ack1] 
+         puts $f1 "$now [expr $e1*$d1*8/$time/1000000]" 
+         set last_ack1 $c1 
+        } else { 
+         puts $f1 "$now 0" 
+        } 
+
+    $ns at [expr $now+$time] "record "   
+}
+	 
+
+# Run the simulation
+proc finish {} {
+	global ns namfile f0 f1
+	$ns flush-trace
+	close $namfile
+        close $f0
+        close $f1
+	#close $trfd
+	exec nam -r 2000.000000us ppp.nam &	
+	#exec cat out.tr | awk -v fw=1 $flow | grep "1 2 tcp" >queue0.tcp
+   	#exec cat queue0.tcp | awk $losses  >viprio.loss
+	
+	#exec cat out.tr | awk -v fw=2 $flow | grep "1 2 tcp" >queue1.tcp
+   	#exec cat queue1.tcp | awk $losses  >viji.loss
+	
+	#exec xgraph viprio.loss viji.loss  -P -x packets_sent -y Packets_loss(%) -bg white -lf helvetica-14 -zg black -bb -tk -lw 4 -geometry 800x400 & 
+	
+	exec xgraph nrdc.thro bic.thro -m -x Simulation_time(ms) -y Throughput(Mb) -geometry 800x400 & 
+	exit 0
+	}
+$ns at 0.0 "record"
+$ns at 60.000000 "finish"
+$ns run
